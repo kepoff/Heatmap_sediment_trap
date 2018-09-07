@@ -1,0 +1,96 @@
+#get proportions from reads/count data:
+
+df <- prop.table(df)
+
+#basic heatmap that converts counts to proportions and removes lowest 5% of SV's and adds dendrograms using Bray-curtis
+
+all.data <- read.csv("/Users/poff/Desktop/seqtab.nochim.csv", header = TRUE)
+row.names(all.data) <- all.data$X
+all.data <- all.data[, -1]
+dim(row.names)
+data.prop <- all.data/rowSums(all.data)
+data.prop[1:3, 1:3]
+scaleyellowred <- colorRampPalette(c("lightyellow", "red"), space = "rgb")(100)
+heatmap(as.matrix(data.prop), Rowv = NA, Colv = NA, col = scalebluered)
+maxab <- apply(data.prop, 2, max)
+dim(all.data)
+head(maxab)
+n1 <- names(which(maxab < 0.05))
+data.prop.1 <- data.prop[, -which(names(data.prop) %in% n1)]
+heatmap(as.matrix(data.prop.1), Rowv = NA, Colv = NA, col = scaleyellowred, margins = c(10, 2))
+data.dist <- vegdist(data.prop, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+heatmap(as.matrix(data.prop.1), Rowv = as.dendrogram(row.clus), Colv = NA, col = scaleyellowred, margins = c(10, 3))
+data.dist.g <- vegdist(t(data.prop.1), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+heatmap(as.matrix(data.prop.1), Rowv = as.dendrogram(row.clus), Colv = as.dendrogram(col.clus), col = scaleyellowred, margins = c(10, 3))
+
+#heatmap script that ran for split up samples 
+library(vegan)
+library(gplots)
+library(RColorBrewer)
+library(readr)
+library(tidyr)
+library(Heatplus)
+
+all.data <- read.csv("/Users/poff/Desktop/2016_pcr_ddpcr_lowsamplesremoved.csv", header = TRUE, row.names = 1)
+all.data <- t(all.data)
+dim(all.data)
+all.data <- as.data.frame(all.data)
+data.prop <- all.data/rowSums(all.data)
+data.prop[1:3, 1:3]
+maxab <- apply(data.prop, 2, max)
+dim(all.data)
+head(maxab)
+n1 <- names(which(maxab < 0.05))
+data.prop.1 <- data.prop[, -which(names(data.prop) %in% n1)]
+scalebluered <- colorRampPalette(c("lightblue", "red"), space = "rgb")(100)
+heatmap(as.matrix(data.prop.1), Rowv = NA, Colv = NA, col = scalebluered, margins = c(10, 2))
+data.dist <- vegdist(data.prop, method = "bray")
+row.clus <- hclust(data.dist, "aver")
+heatmap(as.matrix(data.prop.1), Rowv = as.dendrogram(row.clus), Colv = NA, col = scalebluered, margins = c(10, 3))
+data.dist.g <- vegdist(t(data.prop.1), method = "bray")
+col.clus <- hclust(data.dist.g, "aver")
+heatmap(as.matrix(data.prop.1), Rowv = as.dendrogram(row.clus), Colv = as.dendrogram(col.clus), col = scalebluered, margins = c(10, 3))
+
+
+#stacked barchart that removes 3% lowest reads
+sv_2016 <- read.csv("/Users/poff/Desktop/2016_sv_table_family_genus_ordered.csv", header = TRUE, row.names = 1, check.names = FALSE)
+sv_2016 <- t(sv_2016)
+sv_2016_prop <- prop.table(sv_2016, margin = 1)
+maxab <-apply(sv_2016_prop, 2 , max)
+View(maxab)
+n1 <- names(which(maxab < 0.03))
+data.prop.1 <- as.data.frame(sv_2016_prop)[, -which(names(as.data.frame(sv_2016_prop)) %in% n1)]
+data.prop.1 <- as.matrix(data.prop.1)
+long <- melt(data.prop.1, id.vars = c("sample", "SV", "proportion"))
+ggplot(long, aes(x = Var1, y = value, fill = Var2, group = value)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+#with legend removed
+ggplot(long, aes(x = Var1, y = value, fill = Var2, group = value)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + theme(legend.position="none")
+
+#with viridis theme
+ggplot(long, aes(x = Var1, y = value, fill = Var2, group = value)) + geom_bar(stat = "identity") + theme(axis.text.x = element_text(angle = 90, hjust = 1)) + scale_fill_viridis(discrete = TRUE)
+
+#NMDS with quadrupletons or less removed
+
+
+maxab <-apply(sv_table, 2 , max)
+View(maxab)
+n1 <- names(which(maxab < 5))
+prop_sv <- prop.table(sv_table, margin = 1)
+data.prop.1 <- as.data.frame(prop_sv)[, -which(names(as.data.frame(prop_sv)) %in% n1)]
+MDS = metaMDS(data.prop.1, distance = "bray", try = 50, trymax = 100)
+
+
+MDS1 = MDS$points[,1]
+MDS2 = MDS$points[,2]
+metadata$Year_Collected <- as.character(metadata$Year_Collected)
+NMDS = data.frame(MDS1 = MDS1, MDS2 = MDS2, year_collected = metadata$Month_as_number)
+ggplot(NMDS, mapping = aes(x = MDS1, y = MDS2, col = year_collected)) + geom_point() + stat_ellipse()+ theme_bw()
+
+#anosim
+
+
+
+
